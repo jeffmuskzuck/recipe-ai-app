@@ -1,0 +1,357 @@
+import React, { useState, useMemo } from "react";
+
+// Single-file React + Tailwind recipe finder
+// Default export a React component so it can be previewed
+
+const SAMPLE_RECIPES = [
+  {
+    id: 1,
+    name: "15-min Chickpea Curry",
+    cuisine: "Indian",
+    meal: "Dinner",
+    time: 15, // minutes
+    servings: 2,
+    ingredients: [
+      { name: "chickpeas (canned)", qty: 1, unit: "can" },
+      { name: "onion", qty: 1, unit: "" },
+      { name: "garlic clove", qty: 2, unit: "" },
+      { name: "tomato paste", qty: 2, unit: "tbsp" },
+      { name: "coconut milk", qty: 1, unit: "cup" },
+      { name: "garam masala", qty: 1, unit: "tsp" },
+      { name: "salt", qty: 0.5, unit: "tsp" },
+    ],
+    steps: [
+      "Sauté chopped onion and garlic until soft.",
+      "Add tomato paste and spices, cook 1 minute.",
+      "Add chickpeas and coconut milk, simmer 5–7 minutes.",
+      "Season to taste and serve with rice or flatbread." 
+    ],
+  },
+  {
+    id: 2,
+    name: "20-min Teriyaki Salmon Bowls",
+    cuisine: "Japanese",
+    meal: "Dinner",
+    time: 20,
+    servings: 2,
+    ingredients: [
+      { name: "salmon fillets", qty: 2, unit: "" },
+      { name: "soy sauce", qty: 3, unit: "tbsp" },
+      { name: "brown sugar", qty: 1, unit: "tbsp" },
+      { name: "garlic", qty: 1, unit: "clove" },
+      { name: "rice", qty: 1, unit: "cup (uncooked)" },
+      { name: "broccoli florets", qty: 2, unit: "cups" },
+    ],
+    steps: [
+      "Cook rice according to package instructions.",
+      "Whisk soy sauce, sugar and garlic; marinate salmon 5 minutes.",
+      "Pan-sear salmon 3–4 min per side and steam broccoli.",
+      "Slice salmon and assemble bowls with rice and broccoli." 
+    ],
+  },
+  {
+    id: 3,
+    name: "30-min Veggie Tacos",
+    cuisine: "Mexican",
+    meal: "Lunch",
+    time: 30,
+    servings: 4,
+    ingredients: [
+      { name: "black beans (canned)", qty: 1, unit: "can" },
+      { name: "corn kernels", qty: 1, unit: "cup" },
+      { name: "taco seasoning", qty: 2, unit: "tbsp" },
+      { name: "tortillas", qty: 8, unit: "" },
+      { name: "avocado", qty: 1, unit: "" },
+    ],
+    steps: [
+      "Warm beans with taco seasoning and corn.",
+      "Warm tortillas, fill with mixture and top with avocado.",
+      "Serve with lime wedges." 
+    ],
+  },
+  {
+    id: 4,
+    name: "40-min Roast Chicken & Veg",
+    cuisine: "American",
+    meal: "Dinner",
+    time: 40,
+    servings: 4,
+    ingredients: [
+      { name: "whole chicken (or pieces)", qty: 1, unit: "" },
+      { name: "potatoes", qty: 3, unit: "" },
+      { name: "carrots", qty: 3, unit: "" },
+      { name: "olive oil", qty: 2, unit: "tbsp" },
+      { name: "rosemary", qty: 1, unit: "tsp" },
+    ],
+    steps: [
+      "Preheat oven to 425°F (220°C).", 
+      "Toss potatoes and carrots with oil and rosemary.",
+      "Roast chicken and vegetables 35–40 minutes until cooked through.",
+      "Rest chicken 5 minutes, carve and serve." 
+    ],
+  },
+  {
+    id: 5,
+    name: "10-min Greek Yogurt Parfait",
+    cuisine: "Greek",
+    meal: "Breakfast",
+    time: 10,
+    servings: 1,
+    ingredients: [
+      { name: "Greek yogurt", qty: 1, unit: "cup" },
+      { name: "granola", qty: 0.5, unit: "cup" },
+      { name: "honey", qty: 1, unit: "tbsp" },
+      { name: "berries", qty: 0.5, unit: "cup" },
+    ],
+    steps: [
+      "Layer yogurt, granola and berries in a glass.",
+      "Drizzle honey on top and enjoy." 
+    ],
+  },
+  {
+    id: 6,
+    name: "25-min Pasta Puttanesca",
+    cuisine: "Italian",
+    meal: "Dinner",
+    time: 25,
+    servings: 4,
+    ingredients: [
+      { name: "spaghetti", qty: 12, unit: "oz" },
+      { name: "olive oil", qty: 2, unit: "tbsp" },
+      { name: "garlic", qty: 2, unit: "cloves" },
+      { name: "anchovies", qty: 3, unit: "fillets" },
+      { name: "capers", qty: 1, unit: "tbsp" },
+      { name: "cherry tomatoes", qty: 2, unit: "cups" },
+    ],
+    steps: [
+      "Cook spaghetti until al dente.",
+      "Sauté garlic and anchovies in oil, add tomatoes and capers.",
+      "Toss pasta with sauce and serve." 
+    ],
+  },
+  {
+    id: 7,
+    name: "No-Cook Hummus Plate",
+    cuisine: "Mediterranean",
+    meal: "Snack",
+    time: 5,
+    servings: 2,
+    ingredients: [
+      { name: "hummus", qty: 1, unit: "cup" },
+      { name: "pita bread", qty: 2, unit: "" },
+      { name: "cucumber slices", qty: 1, unit: "cup" },
+      { name: "olive oil", qty: 1, unit: "tbsp" },
+    ],
+    steps: [
+      "Arrange hummus, pita and veggies on a plate.",
+      "Drizzle with olive oil and sprinkle paprika." 
+    ],
+  }
+];
+
+const CUISINES = ["Any", "Indian", "Japanese", "Mexican", "American", "Greek", "Italian", "Mediterranean"];
+const MEALS = ["Any", "Breakfast", "Lunch", "Dinner", "Snack", "Dessert"];
+const TIMES = [
+  { label: "Under 15 min", val: 15 },
+  { label: "Under 30 min", val: 30 },
+  { label: "Under 60 min", val: 60 },
+  { label: "No limit", val: 1000 },
+];
+const DIET_OPTIONS = ["None", "Vegetarian", "Vegan", "Gluten", "Dairy", "Fish", "Nuts", "Eggs"];
+
+export default function PlayfulRecipeFinder() {
+  const [timeLimit, setTimeLimit] = useState(30);
+  const [cuisine, setCuisine] = useState("Any");
+  const [dietary, setDietary] = useState([]);
+  const [meal, setMeal] = useState("Any");
+  const [people, setPeople] = useState(2);
+  const [submitted, setSubmitted] = useState(false);
+
+  // Toggle dietary selection
+  function toggleDiet(option) {
+    if (option === "None") return setDietary([]);
+    setDietary(prev => prev.includes(option) ? prev.filter(x => x !== option) : [...prev, option]);
+  }
+
+  // Helper: will this recipe be excluded due to diet? We do a simple text match against ingredient names
+  function recipeExcludedByDiet(recipe) {
+    if (dietary.length === 0) return false;
+    const lowers = recipe.ingredients.map(i => i.name.toLowerCase());
+    for (const d of dietary) {
+      const key = d.toLowerCase();
+      // Special-casing vegetarian/vegan
+      if (key === "vegetarian" || key === "vegan") {
+        // if recipe has 'chicken', 'salmon', 'anchovy', 'whole chicken' etc -> exclude
+        const animalWords = ["chicken", "salmon", "beef", "pork", "anchovy", "anchovies", "fish", "shrimp", "bacon", "egg", "eggs"].map(s=>s);
+        if (lowers.some(name => animalWords.some(a => name.includes(a)))) return true;
+        if (key === "vegan") {
+          // also exclude dairy and honey
+          if (lowers.some(name => ["yogurt","cheese","milk","butter","honey"].some(a=>name.includes(a)))) return true;
+        }
+      } else {
+        // other restrictions: check if any ingredient name includes the term
+        if (lowers.some(name => name.includes(key))) return true;
+      }
+    }
+    return false;
+  }
+
+  // Score recipes by match closeness (lower time diff, cuisine match, meal match)
+  const scored = useMemo(() => {
+    return SAMPLE_RECIPES.map(r => {
+      const timeScore = Math.abs(r.time - timeLimit);
+      const cuisineScore = (cuisine === "Any" || r.cuisine === cuisine) ? 0 : 50;
+      const mealScore = (meal === "Any" || r.meal === meal) ? 0 : 30;
+      const excluded = recipeExcludedByDiet(r);
+      return { r, score: timeScore + cuisineScore + mealScore, excluded };
+    }).filter(x => !x.excluded)
+      .sort((a,b)=> a.score-b.score);
+  }, [timeLimit, cuisine, meal, dietary]);
+
+  const results = scored.slice(0,5).map(s => s.r);
+
+  function reset() {
+    setSubmitted(false);
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white p-6 flex items-start justify-center">
+      <div className="max-w-4xl w-full bg-white shadow-xl rounded-2xl p-6">
+        <header className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-extrabold">🍳 QuickBite — Find a meal in a few clicks</h1>
+          <div className="text-sm text-slate-500">Playful, fast & practical</div>
+        </header>
+
+        {!submitted ? (
+          <form className="space-y-4" onSubmit={(e)=>{e.preventDefault(); setSubmitted(true);}}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-lg border">
+                <label className="block text-sm font-medium mb-2">⏱️ How long do you have to cook?</label>
+                <div className="flex gap-2 flex-wrap">
+                  {TIMES.map(t => (
+                    <button
+                      key={t.label}
+                      type="button"
+                      onClick={()=>setTimeLimit(t.val)}
+                      className={`px-3 py-2 rounded-md shadow-sm ${timeLimit===t.val? 'bg-amber-200':'bg-white'}`}
+                    >{t.label}</button>
+                  ))}
+                </div>
+                <div className="text-xs text-slate-500 mt-2">Selected: {timeLimit} minutes</div>
+              </div>
+
+              <div className="p-4 rounded-lg border">
+                <label className="block text-sm font-medium mb-2">🌍 Do you prefer a cuisine?</label>
+                <select className="w-full p-2 rounded" value={cuisine} onChange={(e)=>setCuisine(e.target.value)}>
+                  {CUISINES.map(c=> <option key={c} value={c}>{c}</option>)}
+                </select>
+                <div className="text-xs text-slate-500 mt-2">Pick "Any" to let the universe decide.</div>
+              </div>
+
+              <div className="p-4 rounded-lg border md:col-span-1">
+                <label className="block text-sm font-medium mb-2">🥗 Any dietary restrictions?</label>
+                <div className="flex gap-2 flex-wrap">
+                  {DIET_OPTIONS.map(d => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={()=> toggleDiet(d)}
+                      className={`px-3 py-1 rounded-md ${dietary.includes(d)? 'bg-emerald-200':'bg-white'} shadow-sm`}
+                    >{d}</button>
+                  ))}
+                </div>
+                <div className="text-xs text-slate-500 mt-2">Tip: Tap "None" to clear choices.</div>
+              </div>
+
+              <div className="p-4 rounded-lg border">
+                <label className="block text-sm font-medium mb-2">🍽️ What meal is this?</label>
+                <select className="w-full p-2 rounded" value={meal} onChange={(e)=>setMeal(e.target.value)}>
+                  {MEALS.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+
+              <div className="p-4 rounded-lg border md:col-span-2">
+                <label className="block text-sm font-medium mb-2">👥 How many people are eating?</label>
+                <input type="range" min={1} max={8} value={people} onChange={(e)=>setPeople(Number(e.target.value))} />
+                <div className="mt-2">Serving for <strong>{people}</strong> people</div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-4">
+              <button className="px-4 py-2 rounded bg-amber-400 hover:bg-amber-500 font-semibold" type="submit">Find meals</button>
+              <button className="px-4 py-2 rounded border" type="button" onClick={()=>{ setTimeLimit(30); setCuisine('Any'); setDietary([]); setMeal('Any'); setPeople(2); }}>Reset</button>
+            </div>
+          </form>
+        ) : (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">Results — {results.length} match{results.length!==1? 'es':''}</h2>
+              <div className="text-sm text-slate-500">Filters: {cuisine}, {meal}, up to {timeLimit} min</div>
+            </div>
+
+            {results.length === 0 && (
+              <div className="p-6 text-center border rounded">No recipes found that match your filters. Try removing a restriction or increasing time limit.</div>
+            )}
+
+            <div className="grid gap-4">
+              {results.map(recipe => (
+                <RecipeCard key={recipe.id} recipe={recipe} people={people} />
+              ))}
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button className="px-4 py-2 bg-slate-100 rounded" onClick={reset}>🔁 Change filters</button>
+              <button className="px-4 py-2 bg-amber-50 rounded" onClick={()=> window.scrollTo({top:0, behavior:'smooth'})}>⬆️ Back to top</button>
+            </div>
+          </div>
+        )}
+
+        <footer className="mt-8 text-xs text-slate-500">Made with ❤️ — tweak the recipe list in the code to add your own dishes.</footer>
+      </div>
+    </div>
+  );
+}
+
+function RecipeCard({ recipe, people }) {
+  // scale factor
+  const factor = people / recipe.servings;
+
+  return (
+    <div className="p-4 border rounded-lg shadow-sm">
+      <div className="flex items-start justify-between">
+        <div>
+          <h3 className="text-lg font-bold">{recipe.name} <span className="text-sm text-slate-400">· {recipe.cuisine}</span></h3>
+          <div className="text-xs text-slate-500">{recipe.time} minutes · serves {recipe.servings} — scaled ×{factor.toFixed(2)}</div>
+        </div>
+        <div className="text-sm text-amber-600 font-semibold">{recipe.meal}</div>
+      </div>
+
+      <div className="mt-3 grid md:grid-cols-2 gap-4">
+        <div>
+          <h4 className="font-semibold">Ingredients</h4>
+          <ul className="mt-2 list-disc list-inside text-sm">
+            {recipe.ingredients.map((ing, i) => (
+              <li key={i}>{formatQty(ing.qty * factor)} {ing.unit} {ing.unit? '': ''} {ing.name}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="font-semibold">Steps</h4>
+          <ol className="mt-2 list-decimal list-inside text-sm space-y-1">
+            {recipe.steps.map((s, idx) => (<li key={idx}>{s}</li>))}
+          </ol>
+        </div>
+      </div>
+
+      <div className="mt-3 text-xs text-slate-500">Pro tip: Taste as you go — adjust salt, spice, and herbs to your liking.</div>
+    </div>
+  );
+}
+
+function formatQty(q) {
+  // If the qty is near an integer show integer, else show 2 decimals
+  if (Number.isInteger(q)) return q;
+  const rounded = Math.round(q * 100) / 100;
+  return rounded;
+}
